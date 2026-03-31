@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>English Trainer Pro</title>
+  <style>
+    body {font-family: Arial; background:#0f172a; color:white; display:flex; justify-content:center; align-items:center; height:100vh; margin:0;}
+    .app {width:100%; max-width:420px; padding:15px;}
+    .card {background:#1e293b; padding:20px; border-radius:20px; box-shadow:0 10px 30px rgba(0,0,0,0.3);} 
+    button {width:100%; margin-top:10px; padding:12px; border:none; border-radius:12px; background:#3b82f6; color:white; font-size:16px;}
+    button:hover {background:#2563eb;}
+    .correct {background:#22c55e !important;} 
+    .wrong {background:#ef4444 !important;} 
+    .top {display:flex; justify-content:space-between; font-size:14px; opacity:0.8;}
+    .toggle {margin-top:10px; font-size:13px; opacity:0.7; cursor:pointer;}
+  </style>
+</head>
+<body>
+<div class="app">
+  <div class="card">
+    <div class="top">
+      <div id="score">Очки: 0</div>
+      <div id="progress">0</div>
+    </div>
+    <h2 id="question">Загрузка...</h2>
+    <div id="answers"></div>
+    <div class="toggle" onclick="toggleMode()">Сменить направление</div>
+  </div>
+</div>
+
+<script>
+const words = [
+  {en:"allergic", ru:"аллергический"},
+  {en:"ambition", ru:"амбиция"},
+  {en:"beauty", ru:"красота"},
+  {en:"breeze", ru:"лёгкий ветер"},
+  {en:"broccoli", ru:"брокколи"},
+  {en:"calorie", ru:"калория"},
+  {en:"complain", ru:"жаловаться"},
+  {en:"connect", ru:"соединять"},
+  {en:"courage", ru:"мужество"},
+  {en:"delicious", ru:"вкусный"}
+];
+
+let score = Number(localStorage.getItem("score")||0);
+let mistakes = JSON.parse(localStorage.getItem("mistakes")||"[]");
+let mode = localStorage.getItem("mode") || "en-ru";
+let current;
+
+function shuffle(arr){return arr.sort(()=>Math.random()-0.5);} 
+
+function speak(text){
+  const msg = new SpeechSynthesisUtterance(text);
+  msg.lang = 'en-US';
+  speechSynthesis.speak(msg);
+}
+
+function nextQuestion(){
+  current = words[Math.floor(Math.random()*words.length)];
+  const q = mode === "en-ru" ? current.en : current.ru;
+  document.getElementById("question").innerText = q;
+  if(mode === "en-ru") speak(current.en);
+
+  let options = shuffle([...words]).slice(0,3);
+  options.push(current);
+  options = shuffle(options);
+
+  const answersDiv = document.getElementById("answers");
+  answersDiv.innerHTML="";
+
+  options.forEach(opt=>{
+    const btn = document.createElement("button");
+    btn.innerText = mode === "en-ru" ? opt.ru : opt.en;
+    btn.onclick = ()=>checkAnswer(opt, btn);
+    answersDiv.appendChild(btn);
+  });
+
+  document.getElementById("progress").innerText = `Ошибок: ${mistakes.length}`;
+}
+
+function checkAnswer(opt, btn){
+  const correct = opt.en === current.en;
+  if(correct){
+    btn.classList.add("correct");
+    score++;
+  } else {
+    btn.classList.add("wrong");
+    mistakes.push(current);
+  }
+
+  localStorage.setItem("score", score);
+  localStorage.setItem("mistakes", JSON.stringify(mistakes));
+
+  document.getElementById("score").innerText = "Очки: " + score;
+
+  setTimeout(nextQuestion, 800);
+}
+
+function toggleMode(){
+  mode = mode === "en-ru" ? "ru-en" : "en-ru";
+  localStorage.setItem("mode", mode);
+  nextQuestion();
+}
+
+nextQuestion();
+</script>
+</body>
+</html>
